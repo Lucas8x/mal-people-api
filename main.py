@@ -1,9 +1,11 @@
 from typing import Dict
 import requests
 from flask import Flask, jsonify
+from flask_cors import CORS
 from lxml import html
 
 app = Flask(__name__)
+CORS(app)
 
 
 def get_character_info(url: str) -> Dict[str, list]:
