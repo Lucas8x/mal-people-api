@@ -5,6 +5,7 @@ from flask_cors import CORS
 from lxml import html
 
 app = Flask(__name__)
+app.config['JSON_SORT_KEYS'] = False
 CORS(app)
 
 
@@ -13,7 +14,7 @@ def get_character_info(url: str) -> Dict[str, list]:
   src = html.fromstring(response.content)
   return {
     'name': ''.join(src.xpath('//*[@class="h1-title"]/text()')).strip().replace("  ", " "),
-    'pictures': list(set(src.xpath('//*[@class="js-picture-gallery"]/@href')))
+    'pictures': src.xpath('//*[@class="js-picture-gallery"]/@href')
   }
 
 
@@ -22,11 +23,13 @@ def fetch(people_id: int):
   print(f'Fetching people with id {people_id}')
   response = requests.get(f'https://myanimelist.net/people/{people_id}')
   src = html.fromstring(response.content)
+  response2 = requests.get(f'https://myanimelist.net/people/{people_id}/*/pictures')
+  src2 = html.fromstring(response2.content)
   characters_links = list(set(src.xpath('//*/td/a[contains(@href, "character")]/@href')))
-  characters = [get_character_info(url) for url in characters_links]
   data = {
     'name': ''.join(src.xpath('//*[@class="h1-title"]/text()')),
-    'characters': characters
+    'pictures': src2.xpath('//*[@class="js-picture-gallery"]/@href'),
+    'characters': [get_character_info(url) for url in characters_links],
   }
   print(f'Fetch > {people_id} - {data["name"]} < completed')
   return jsonify(data)
