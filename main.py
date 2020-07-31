@@ -1,7 +1,7 @@
 import os
 from typing import Dict
 import requests
-from flask import Flask, jsonify
+from flask import Flask, jsonify, redirect
 from flask_cors import CORS
 from lxml import html
 
@@ -34,6 +34,11 @@ def fetch(people_id: int):
   }
   print(f'Fetch > {people_id} - {data["name"]} < completed')
   return jsonify(data)
+
+
+@app.route('/')
+def home():
+  return redirect('https://lucas8x.github.io/mal-va-mosaic/')
 
 
 if __name__ == '__main__':
