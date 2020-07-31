@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 import requests
 from flask import Flask, jsonify
@@ -36,4 +37,5 @@ def fetch(people_id: int):
 
 
 if __name__ == '__main__':
-  app.run(host='0.0.0.0', port=3333)
+  port = int(os.environ.get('PORT', 3333))
+  app.run(host='0.0.0.0', port=port)
