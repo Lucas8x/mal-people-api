@@ -13,9 +13,12 @@ CORS(app)
 def get_character_info(url: str) -> Dict[str, list]:
   response = requests.get(f'{url}/pictures')
   src = html.fromstring(response.content)
+  default = src.xpath('//*[contains(@style, "text-align")]/a/img/@data-src')
+  pictures = src.xpath('//*[@class="js-picture-gallery"]/@href')
   return {
     'name': ''.join(src.xpath('//*[@class="h1-title"]/text()')).strip().replace("  ", " "),
-    'pictures': src.xpath('//*[@class="js-picture-gallery"]/@href')
+    'default': default[0] if default else None,
+    'pictures': pictures if pictures else None
   }
 
 
@@ -27,8 +30,10 @@ def fetch(people_id: int):
   response2 = requests.get(f'https://myanimelist.net/people/{people_id}/*/pictures')
   src2 = html.fromstring(response2.content)
   characters_links = list(set(src.xpath('//*/td/a[contains(@href, "character")]/@href')))
+  default = src.xpath(f'//*[contains(@href, "{people_id}")]/img/@data-src')
   data = {
     'name': ''.join(src.xpath('//*[@class="h1-title"]/text()')),
+    'default': default[0] if default else None,
     'pictures': src2.xpath('//*[@class="js-picture-gallery"]/@href'),
     'characters': [get_character_info(url) for url in characters_links],
   }
