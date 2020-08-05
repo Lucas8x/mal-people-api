@@ -1,5 +1,5 @@
 import os
-from typing import Dict
+from typing import Dict, Optional
 import requests
 from flask import Flask, jsonify, redirect
 from flask_cors import CORS
@@ -10,32 +10,45 @@ app.config['JSON_SORT_KEYS'] = False
 CORS(app)
 
 
-def get_character_info(url: str) -> Dict[str, list]:
-  response = requests.get(f'{url}/pictures')
+def get_page_src(url: str):
+  response = requests.get(url)
   src = html.fromstring(response.content)
+  return src
+
+
+def get_character_info(url: str) -> Dict:
+  src = get_page_src(f'{url}/pictures')
+
+  name = src.xpath('//*[@class="h1-title"]/text()')
   default = src.xpath('//*[contains(@style, "text-align")]/a/img/@data-src')
   pictures = src.xpath('//*[@class="js-picture-gallery"]/@href')
+
   return {
-    'name': ''.join(src.xpath('//*[@class="h1-title"]/text()')).strip().replace("  ", " "),
+    'name': ''.join(name).strip().replace('  ', ' '),
     'default': default[0] if default else None,
     'pictures': pictures if pictures else None
   }
 
 
-@app.route('/people/<int:people_id>', methods=['GET'])
+@app.route('/people/<int:people_id>')
 def fetch(people_id: int):
   print(f'Fetching people with id {people_id}')
-  response = requests.get(f'https://myanimelist.net/people/{people_id}')
-  src = html.fromstring(response.content)
-  response2 = requests.get(f'https://myanimelist.net/people/{people_id}/*/pictures')
-  src2 = html.fromstring(response2.content)
-  characters_links = list(set(src.xpath('//*/td/a[contains(@href, "character")]/@href')))
-  default = src.xpath(f'//*[contains(@href, "{people_id}")]/img/@data-src')
+  people_src = get_page_src(f'https://myanimelist.net/people/{people_id}')
+  pictures_src = get_page_src(f'https://myanimelist.net/people/{people_id}/*/pictures')
+
+  characters_links = people_src.xpath('//*/td/a[contains(@href, "character")]/@href')
+  characters_links = list(set(characters_links))
+
+  name = people_src.xpath('//*[@class="h1-title"]/text()')
+  default = people_src.xpath(f'//*[contains(@href, "{people_id}")]/img/@data-src')
+  pictures = pictures_src.xpath('//*[@class="js-picture-gallery"]/@href')
+  characters = [get_character_info(url) for url in characters_links]
+
   data = {
-    'name': ''.join(src.xpath('//*[@class="h1-title"]/text()')),
+    'name': ''.join(name),
     'default': default[0] if default else None,
-    'pictures': src2.xpath('//*[@class="js-picture-gallery"]/@href'),
-    'characters': [get_character_info(url) for url in characters_links],
+    'pictures': pictures if pictures else None,
+    'characters': characters if characters else None,
   }
   print(f'Fetch > {people_id} - {data["name"]} < completed')
   return jsonify(data)
