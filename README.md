@@ -9,3 +9,9 @@ Install the requirements:
 Run server:
 <pre><code>4. python main.py</code></pre>
 Access API at http://localhost:3333/
+
+# People
+
+* **URL: /people/:people_id**
+* **Method: GET**
+* **URL Params: people_id=[integer]**
